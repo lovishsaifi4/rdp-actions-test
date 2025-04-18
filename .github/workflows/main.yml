@@ -1,0 +1,31 @@
+name: Setup Temporary RDP
+
+on:
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  setup-rdp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install RDP and Desktop
+        run: |
+          sudo apt update
+          sudo apt install -y xrdp lxde-core lxde-common
+          sudo systemctl enable xrdp
+          sudo systemctl start xrdp
+          echo "startlxde" > ~/.xsession
+          sudo ufw allow 3389
+
+      - name: Setup ngrok
+        run: |
+          wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+          tar -xzf ngrok-v3-stable-linux-amd64.tgz
+          ./ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+          ./ngrok tcp 3389 --log=stdout &
+
+      - name: Keep Workflow Running
+        run: |
+          sleep 600 # Keep runner alive for 10 minutes
